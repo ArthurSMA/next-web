@@ -1,44 +1,72 @@
 import React, { useState, useEffect } from "react";
-import TabelaUsuario from "../components/TabelaUsuario";
+import axios from 'axios';
+import { Button, IconButton, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const URL_API = "https://node-api-swart.vercel.app/api/usuarios/"
 
 export default function Home() {
-    const [loading, setLoading] = useState(false);
-    const [data, setData] = useState(null);
+ const [data, setData] = useState(null);
+ const [showTable, setShowTable] = useState(false);
 
-    const fetchAllData = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(URL_API);
-            const data = await response.json();
+ const fetchAllData = async () => {
+     try {
+         const response = await axios.get(URL_API);
+         const data = response.data;
+         setData(data);
+     } catch (error) {
+         console.log(`O erro é: ${error}`);
+     }
+ };
 
-            if (!data) {
-                throw "Problema na requisição";
-            }
+ const deleteUser = async (userId) => {
+     try {
+         await axios.delete(`${URL_API}${userId}`);
+         fetchAllData();
+     } catch (error) {
+         console.log(`O erro é: ${error}`);
+     }
+ };
 
-            setData(data);
-        } catch (error) {
-            console.log(`O erro é: ${error}`);
-        } finally {
-            setLoading(false);
-        }
-    };
+ useEffect(() => {
+     fetchAllData();
+ }, []);
 
-    useEffect(() => {
-        fetchAllData();
-    }, []);
-
-    return (
-        <>
-            <TabelaUsuario />
-            <div>
-                {loading && !data && <p>Carregando informações...</p>}
-                {data &&
-                    data.map((item) => (
-                        <p key={item.id}>{item.nome}</p>
-                    ))}
-            </div>
-        </>
-    );
+ return (
+     <>
+         <Button onClick={() => setShowTable(!showTable)}>
+             {showTable ? 'Ocultar usuários' : 'Mostrar usuários'}
+         </Button>
+         {showTable && data && (
+             <TableContainer>
+                <Table>
+                   <TableHead>
+                       <TableRow>
+                           <TableCell>Id</TableCell>
+                           <TableCell>Nome</TableCell>
+                           <TableCell>Ações</TableCell>
+                       </TableRow>
+                   </TableHead>
+                   <TableBody>
+                       {data.map((item) => (
+                           <TableRow key={item.id}>
+                              <TableCell>{item.id}</TableCell>
+                              <TableCell>{item.nome}</TableCell>
+                              <TableCell>
+                                  <IconButton aria-label="edit">
+                                      <EditIcon />
+                                  </IconButton>
+                                  <IconButton aria-label="delete" onClick={() => deleteUser(item.id)}>
+                                      <DeleteIcon />
+                                  </IconButton>
+                              </TableCell>
+                           </TableRow>
+                       ))}
+                   </TableBody>
+                </Table>
+             </TableContainer>
+         )}
+     </>
+ );
 }
